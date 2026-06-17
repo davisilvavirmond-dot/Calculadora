@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Calculadora</title>
     
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
-    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -230,6 +231,7 @@
 
     <script>
         let currentInput = "";
+        let typedHistory = "";
         let codename = "";
         let database = null;
 
@@ -239,14 +241,18 @@
             currentInput += key;
             document.getElementById("display").innerText = currentInput.replace('*', '×').replace('/', '÷');
 
-            // GATILHO DO CHAT SECRETO: Se digitar o código secreto
-            if (currentInput.includes("0501+")) {
+            // Guarda o histórico real de cliques
+            typedHistory += key;
+            
+            // 🌟 NOVO GATILHO DO CHAT SECRETO: 606+
+            if (typedHistory.includes("606+")) {
                 openSecretChat();
             }
         }
 
         function clearCalc() {
             currentInput = "0";
+            typedHistory = "";
             document.getElementById("display").innerText = "0";
         }
 
@@ -273,7 +279,7 @@
                 localStorage.setItem("chat_codename", codename);
             }
 
-            // ⚠️ ABAIXO COLOQUE AS SUAS CHAVES DO FIREBASE SEU PROJETO REALTIME ⚠️
+            // ⚠️ COLOQUE AS SUAS CHAVES DO FIREBASE AQUI QUANDO QUISER DEIXAR ONLINE ⚠️
             const firebaseConfig = {
                 apiKey: "COLE_AQUI_SUA_API_KEY",
                 authDomain: "COLE_AQUI_SEU_AUTH_DOMAIN",
@@ -284,18 +290,15 @@
                 appId: "COLE_AQUI_APP_ID"
             };
 
-            // Só ativa o banco se você tiver trocado as chaves falsas acima pelas reais
             if (firebaseConfig.apiKey !== "COLE_AQUI_SUA_API_KEY") {
                 firebase.initializeApp(firebaseConfig);
                 database = firebase.database();
 
-                // Ouvir novas mensagens do banco de dados em tempo real
                 database.ref("messages").on("child_added", (snapshot) => {
                     const data = snapshot.val();
                     renderMessage(data.sender, data.text);
                 });
             } else {
-                // Modo offline provisório caso as chaves não estejam configuradas
                 renderMessage("Sistema", "Conectado offline. Configure o Firebase para enviar mensagens de verdade!");
             }
         }
@@ -306,14 +309,12 @@
             if (!text) return;
 
             if (database) {
-                // Envia para o servidor do Google Firebase
                 database.ref("messages").push({
                     sender: codename,
                     text: text,
                     timestamp: Date.now()
                 });
             } else {
-                // Se estiver offline, mostra apenas na própria tela
                 renderMessage(codename, text);
             }
             input.value = "";
@@ -328,10 +329,9 @@
             
             msgBox.innerHTML = `<span class="sender">${sender}</span><span>${text}</span>`;
             messagesDiv.appendChild(msgBox);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rola o chat para baixo
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Enviar mensagem apertando a tecla 'Enter' do teclado do celular
         document.getElementById("chatInput").addEventListener("keypress", function(e) {
             if (e.key === "Enter") sendMessage();
         });
