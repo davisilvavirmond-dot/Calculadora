@@ -5,261 +5,335 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Calculadora</title>
     
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
+    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/iOS_Calculator_Icon.svg/512px-iOS_Calculator_Icon.svg.png">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Calculadora">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; }
-        body, html { width: 100%; height: 100%; background-color: #000; overflow: hidden; position: relative; }
-        
-        .screen { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transition: opacity 0.4s ease, transform 0.4s ease; display: flex; flex-direction: column; }
-        .hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
 
-        /* --- ESTILO DA CALCULADORA (Estilo iOS) --- */
-        #calc-screen { background: #000; justify-content: flex-end; padding: 20px; }
-        #calc-display { color: #fff; text-align: right; font-size: 70px; font-weight: 300; margin-bottom: 20px; overflow-x: auto; white-space: nowrap; width: 100%; }
-        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .btn { border-radius: 50%; border: none; font-size: 32px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; cursor: pointer; transition: filter 0.1s; }
-        .btn:active { filter: brightness(1.3); }
-        .btn-gray { background-color: #a5a5a5; color: #000; }
-        .btn-dark { background-color: #333333; color: #fff; }
-        .btn-orange { background-color: #ff9f0a; color: #fff; }
-        .btn-zero { grid-column: span 2; aspect-ratio: auto; border-radius: 40px; padding-left: 30px; justify-content: flex-start; }
+        body {
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
 
-        /* --- ESTILO DO CHAT --- */
-        #chat-screen { background: #121212; color: #fff; }
-        #chat-header { background: #1f1f1f; padding: 20px 15px; text-align: center; font-weight: 600; border-bottom: 1px solid #2d2d2d; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
-        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        
-        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 15px; word-wrap: break-word; line-height: 1.4; position: relative; }
-        .msg-me { background: #007aff; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .msg-them { background: #26262b; align-self: flex-start; border-bottom-left-radius: 4px; }
-        .msg-meta { font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; display: block; }
-        .msg-sender { font-size: 11px; font-weight: bold; opacity: 0.8; margin-bottom: 2px; display: block; }
+        /* --- ESTILO DA CALCULADORA (PADRÃO IPHONE) --- */
+        .calc-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            background-color: #000;
+        }
 
-        #chat-input-area { background: #1f1f1f; padding: 12px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #2d2d2d; }
-        #chat-input { flex: 1; background: #2c2c2e; border: none; border-radius: 20px; padding: 10px 15px; color: #fff; font-size: 16px; outline: none; user-select: text; }
-        #btn-send { background: #007aff; border: none; color: #fff; font-weight: bold; padding: 10px 18px; border-radius: 20px; cursor: pointer; }
+        .display {
+            font-size: 70px;
+            font-weight: 300;
+            text-align: right;
+            padding: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
 
-        /* --- TELA DE LOGIN SECRETO --- */
-        #login-overlay { background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
-        .login-box { background: #1f1f1f; padding: 25px; border-radius: 15px; width: 100%; max-width: 300px; text-align: center; }
-        .login-box input { width: 100%; padding: 10px; margin: 15px 0; background: #2c2c2e; border: none; color: #fff; border-radius: 8px; text-align: center; font-size: 16px; user-select: text; }
-        .login-box button { background: #007aff; border: none; color: #fff; width: 100%; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 16px; }
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: #333333;
+            color: white;
+            font-size: 30px;
+            border: none;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: filter 0.1s;
+        }
+
+        .btn:active {
+            filter: brightness(1.4);
+        }
+
+        .btn.op {
+            background-color: #ff9f0a;
+        }
+
+        .btn.top {
+            background-color: #a5a5a5;
+            color: black;
+            font-size: 26px;
+        }
+
+        .btn.zero {
+            grid-column: span 2;
+            aspect-ratio: auto;
+            height: 100%;
+            border-radius: 40px;
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+
+        /* --- ESTILO DO CHAT SECRETO --- */
+        .chat-container {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background-color: #1c1c1e;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background-color: #2c2c2e;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #3a3a3c;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg-box {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 16px;
+            word-wrap: break-word;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .msg-box .sender {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .msg-box.me {
+            background-color: #0b84ff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-box.other {
+            background-color: #3a3a3c;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            background-color: #2c2c2e;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background-color: #1c1c1e;
+            border: 1px solid #3a3a3c;
+            border-radius: 20px;
+            padding: 10px 15px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .send-btn {
+            background-color: #0b84ff;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-    <div id="calc-screen" class="screen">
-        <div id="calc-display">0</div>
-        <div class="calc-grid">
-            <button class="btn btn-gray" onclick="clearCalc()">AC</button>
-            <button class="btn btn-gray" onclick="pressOp('/')">÷</button>
-            <button class="btn btn-gray" onclick="pressOp('*')">×</button>
-            <button class="btn btn-orange" onclick="pressOp('-')">−</button>
-            
-            <button class="btn btn-dark" onclick="pressNum('7')">7</button>
-            <button class="btn btn-dark" onclick="pressNum('8')">8</button>
-            <button class="btn btn-dark" onclick="pressNum('9')">9</button>
-            <button class="btn btn-orange" onclick="pressOp('+')">+</button>
-            
-            <button class="btn btn-dark" onclick="pressNum('4')">4</button>
-            <button class="btn btn-dark" onclick="pressNum('5')">5</button>
-            <button class="btn btn-dark" onclick="pressNum('6')">6</button>
-            <button class="btn btn-orange" onclick="calculate()">=</button>
-            
-            <button class="btn btn-dark" onclick="pressNum('1')">1</button>
-            <button class="btn btn-dark" onclick="pressNum('2')">2</button>
-            <button class="btn btn-dark" onclick="pressNum('3')">3</button>
-            <button class="btn btn-dark btn-zero" onclick="pressNum('0')">0</button>
+    <div id="calc" class="calc-container">
+        <div id="display" class="display">0</div>
+        <div class="buttons-grid">
+            <button class="btn top" onclick="clearCalc()">AC</button>
+            <button class="btn top" onclick="pressKey('+/-')">+/-</button>
+            <button class="btn top" onclick="pressKey('%')">%</button>
+            <button class="btn op" onclick="pressKey('/')">÷</button>
+
+            <button class="btn" onclick="pressKey('7')">7</button>
+            <button class="btn" onclick="pressKey('8')">8</button>
+            <button class="btn" onclick="pressKey('9')">9</button>
+            <button class="btn op" onclick="pressKey('*')">×</button>
+
+            <button class="btn" onclick="pressKey('4')">4</button>
+            <button class="btn" onclick="pressKey('5')">5</button>
+            <button class="btn" onclick="pressKey('6')">6</button>
+            <button class="btn op" onclick="pressKey('-')">-</button>
+
+            <button class="btn" onclick="pressKey('1')">1</button>
+            <button class="btn" onclick="pressKey('2')">2</button>
+            <button class="btn" onclick="pressKey('3')">3</button>
+            <button class="btn op" onclick="pressKey('+')">+</button>
+
+            <button class="btn zero" onclick="pressKey('0')">0</button>
+            <button class="btn" onclick="pressKey('.')">,</button>
+            <button class="btn op" onclick="calculate()">=</button>
         </div>
     </div>
 
-    <div id="login-overlay" class="screen hidden">
-        <div class="login-box">
-            <h3>Defina seu Codinome</h3>
-            <p style="font-size: 12px; opacity: 0.6; margin-top: 5px;">Para manter o anonimato entre vocês.</p>
-            <input type="text" id="username-input" placeholder="Ex: Batman, Player1...">
-            <button onclick="saveUsername()">Entrar no Chat</button>
-        </div>
-    </div>
-
-    <div id="chat-screen" class="screen hidden">
-        <div id="chat-header">
-            <span>🔒 Chat Privado</span>
-            <span style="font-size: 12px; opacity: 0.5;" onclick="lockChat()">Sair</span>
-        </div>
-        <div id="chat-messages"></div>
-        <div id="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Digite uma mensagem..." autocomplete="off">
-            <button id="btn-send" onclick="sendMessage()">Enviar</button>
+    <div id="chat" class="chat-container">
+        <div class="chat-header">Notas de Matemática 📝</div>
+        <div id="messages" class="messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Digite uma nota...">
+            <button class="send-btn" onclick="sendMessage()">Enviar</button>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO DO BANCO DE DADOS (FIREBASE)
-        // ==========================================
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "SEU_PROJETO.firebaseapp.com",
-            databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-            projectId: "SEU_PROJETO",
-            storageBucket: "SEU_PROJETO.appspot.com",
-            messagingSenderId: "SUA_SENDER_ID",
-            appId: "SUA_APP_ID"
-        };
-        
+        let currentInput = "";
+        let codename = "";
         let database = null;
-        if(firebaseConfig.apiKey !== "SUA_API_KEY") {
-            firebase.initializeApp(firebaseConfig);
-            database = firebase.database();
-        }
 
-        // ==========================================
-        // LÓGICA DA CALCULADORA + GATILHO
-        // ==========================================
-        let displayValue = '0';
-        let secretTracker = ''; 
+        // --- LÓGICA DA CALCULADORA ---
+        function pressKey(key) {
+            if (currentInput === "0" && key !== ".") currentInput = "";
+            currentInput += key;
+            document.getElementById("display").innerText = currentInput.replace('*', '×').replace('/', '÷');
 
-        function updateDisplay() {
-            document.getElementById('calc-display').innerText = displayValue;
-        }
-
-        function pressNum(num) {
-            if (displayValue === '0') { displayValue = num; } 
-            else { displayValue += num; }
-            secretTracker += num;
-            updateDisplay();
-            checkSecret();
-        }
-
-        function pressOp(op) {
-            displayValue += ' ' + op + ' ';
-            secretTracker += op;
-            updateDisplay();
-            checkSecret();
+            // GATILHO DO CHAT SECRETO: Se digitar o código secreto
+            if (currentInput.includes("0501+")) {
+                openSecretChat();
+            }
         }
 
         function clearCalc() {
-            displayValue = '0';
-            secretTracker = '';
-            updateDisplay();
+            currentInput = "0";
+            document.getElementById("display").innerText = "0";
         }
 
         function calculate() {
             try {
-                let expression = displayValue.replace(/×/g, '*').replace(/÷/g, '/');
-                let result = eval(expression);
-                displayValue = String(result);
-                secretTracker = ''; 
-                updateDisplay();
-            } catch(e) {
-                displayValue = 'Erro';
-                updateDisplay();
-                setTimeout(clearCalc, 1500);
+                let result = eval(currentInput);
+                document.getElementById("display").innerText = result;
+                currentInput = String(result);
+            } catch (e) {
+                document.getElementById("display").innerText = "Erro";
+                currentInput = "";
             }
         }
 
-        function checkSecret() {
-            if (secretTracker.endsWith('0501+')) {
-                clearCalc();
-                openVault();
-            }
-        }
-
-        // ==========================================
-        // LÓGICA DO COFRE / CHAT
-        // ==========================================
-        let myUsername = localStorage.getItem('chat_username');
-
-        function openVault() {
-            document.getElementById('calc-screen').classList.add('hidden');
+        // --- LÓGICA DO CHAT ---
+        function openSecretChat() {
+            document.getElementById("calc").style.display = "none";
+            document.getElementById("chat").style.display = "flex";
             
-            if (!myUsername) {
-                document.getElementById('login-overlay').classList.remove('hidden');
+            codename = localStorage.getItem("chat_codename");
+            if (!codename) {
+                codename = prompt("Escolha seu codinome para o chat:");
+                if (!codename) codename = "Anônimo";
+                localStorage.setItem("chat_codename", codename);
+            }
+
+            // ⚠️ ABAIXO COLOQUE AS SUAS CHAVES DO FIREBASE SEU PROJETO REALTIME ⚠️
+            const firebaseConfig = {
+                apiKey: "COLE_AQUI_SUA_API_KEY",
+                authDomain: "COLE_AQUI_SEU_AUTH_DOMAIN",
+                databaseURL: "COLE_AQUI_SUA_DATABASE_URL",
+                projectId: "COLE_AQUI_SEU_PROJECT_ID",
+                storageBucket: "COLE_AQUI_SEU_STORAGE_BUCKET",
+                messagingSenderId: "COLE_AQUI_MESSAGING_SENDER_ID",
+                appId: "COLE_AQUI_APP_ID"
+            };
+
+            // Só ativa o banco se você tiver trocado as chaves falsas acima pelas reais
+            if (firebaseConfig.apiKey !== "COLE_AQUI_SUA_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+
+                // Ouvir novas mensagens do banco de dados em tempo real
+                database.ref("messages").on("child_added", (snapshot) => {
+                    const data = snapshot.val();
+                    renderMessage(data.sender, data.text);
+                });
             } else {
-                document.getElementById('chat-screen').classList.remove('hidden');
-                startChatListener();
+                // Modo offline provisório caso as chaves não estejam configuradas
+                renderMessage("Sistema", "Conectado offline. Configure o Firebase para enviar mensagens de verdade!");
             }
-        }
-
-        function saveUsername() {
-            let input = document.getElementById('username-input').value.trim();
-            if (input) {
-                localStorage.setItem('chat_username', input);
-                myUsername = input;
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('chat-screen').classList.remove('hidden');
-                startChatListener();
-            }
-        }
-
-        function lockChat() {
-            document.getElementById('chat-screen').classList.add('hidden');
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('calc-screen').classList.remove('hidden');
         }
 
         function sendMessage() {
-            let input = document.getElementById('chat-input');
-            let text = input.value.trim();
-            
-            if (text === '') return;
+            const input = document.getElementById("chatInput");
+            const text = input.value.trim();
+            if (!text) return;
 
-            if (!database) {
-                alert("O app está funcionando offline. Configure o Firebase para conversar com outro celular!");
-                input.value = '';
-                return;
-            }
-
-            database.ref('secret_messages').push({
-                sender: myUsername,
-                message: text,
-                timestamp: Date.now()
-            });
-
-            input.value = '';
-        }
-
-        function startChatListener() {
-            if (!database) return;
-
-            database.ref('secret_messages').limitToLast(50).on('value', (snapshot) => {
-                let chatMessages = document.getElementById('chat-messages');
-                chatMessages.innerHTML = ''; 
-
-                snapshot.forEach((childSnapshot) => {
-                    let data = childSnapshot.val();
-                    let isMe = data.sender === myUsername;
-
-                    let msgDiv = document.createElement('div');
-                    msgDiv.classList.add('msg', isMe ? 'msg-me' : 'msg-them');
-
-                    let time = new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-                    msgDiv.innerHTML = `
-                        <span class="msg-sender">${isMe ? 'Você' : data.sender}</span>
-                        ${data.message}
-                        <span class="msg-meta">${time}</span>
-                    `;
-                    chatMessages.appendChild(msgDiv);
+            if (database) {
+                // Envia para o servidor do Google Firebase
+                database.ref("messages").push({
+                    sender: codename,
+                    text: text,
+                    timestamp: Date.now()
                 });
-
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
+            } else {
+                // Se estiver offline, mostra apenas na própria tela
+                renderMessage(codename, text);
+            }
+            input.value = "";
         }
 
-        document.getElementById('chat-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+        function renderMessage(sender, text) {
+            const messagesDiv = document.getElementById("messages");
+            const isMe = sender === codename;
+            
+            const msgBox = document.createElement("div");
+            msgBox.classList.add("msg-box", isMe ? "me" : "other");
+            
+            msgBox.innerHTML = `<span class="sender">${sender}</span><span>${text}</span>`;
+            messagesDiv.appendChild(msgBox);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rola o chat para baixo
+        }
+
+        // Enviar mensagem apertando a tecla 'Enter' do teclado do celular
+        document.getElementById("chatInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") sendMessage();
         });
     </script>
 </body>
